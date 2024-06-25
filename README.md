@@ -8,7 +8,6 @@
     - this package is contain orm for sqlx 
 
 ### connection
-Addition Client for using in singleton
     - psql include postgresql, mssql, clickhouse 
     - mongodb
     - redis
