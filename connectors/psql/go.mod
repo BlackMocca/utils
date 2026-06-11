@@ -1,4 +1,4 @@
-module github.com/BlackMocca/utils/psql
+module github.com/BlackMocca/utils/connectors/psql
 
 go 1.26.2
 

@@ -21,7 +21,7 @@ utils/
 |--------|-------------|---------|----------------------|
 | **[fn](./fn)** | `github.com/BlackMocca/utils/fn` | Struct-to-struct conversion via JSON round-trip | `ConvertStruct[T, U]`, `CopyJSON` |
 | **[models](./models)** | `github.com/BlackMocca/utils/models` | Database & JSON types: Date, Timestamp, EnumScan, JsonScan | `Date`, `Timestamp`, `EnumScan[T]`, `JsonScan[T]` |
-| **[psql](./connectors/psql)** | `github.com/BlackMocca/utils/psql` | PostgreSQL client wrapper over pgx/v5 + sqlx with pool management & optional tracing | `Client`, `NewConnection`, `NewConnectionWithTracing` |
+| **[psql](./connectors/psql)** | `github.com/BlackMocca/utils/connectors/psql` | PostgreSQL client wrapper over pgx/v5 + sqlx with pool management & optional tracing | `Client`, `NewConnection`, `NewConnectionWithTracing` |
 
 All modules require **Go 1.26+**. They share no dependencies between each other — `fn` and `models` have zero runtime deps beyond the standard library; `psql` adds database drivers, sqlx, tracing, and test tooling.
 
@@ -37,7 +37,7 @@ go get github.com/BlackMocca/utils/fn@latest
 go get github.com/BlackMocca/utils/models@latest
 
 # PostgreSQL connector wrapper
-go get github.com/BlackMocca/utils/psql@latest
+go get github.com/BlackMocca/utils/connectors/psql@latest
 ```
 
 ---

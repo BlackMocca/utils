@@ -9,7 +9,7 @@ A lightweight, production-ready PostgreSQL connection wrapper built on top of [`
 ## Installation
 
 ```bash
-go get github.com/BlackMocca/utils/psql@latest
+go get github.com/BlackMocca/utils/connectors/psql@latest
 ```
 
 ### Dependencies (automatically fetched)
@@ -34,7 +34,7 @@ import (
     "context"
     "fmt"
 
-    psql "github.com/BlackMocca/utils/psql"
+    psql "github.com/BlackMocca/utils/connectors/psql"
 )
 
 func main() {
@@ -67,7 +67,7 @@ func main() {
 ### 1. Basic Connection (No Tracing)
 
 ```go
-import psql "github.com/BlackMocca/utils/psql"
+import psql "github.com/BlackMocca/utils/connectors/psql"
 
 // Create client with default settings
 client, err := psql.NewConnection(ctx, dsn)
@@ -87,7 +87,7 @@ When you need distributed tracing (e.g., Jaeger, Zipkin):
 ```go
 import (
     "github.com/opentracing/opentracing-go"
-    psql "github.com/BlackMocca/utils/psql"
+    psql "github.com/BlackMocca/utils/connectors/psql"
 )
 
 // Initialize your tracer (example: Jaeger)

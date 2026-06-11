@@ -37,7 +37,7 @@ utils/
 │   └── json_test.go             ← JsonScan maps/arrays/structs + SQL round-trip
 └── connectors/
     └── psql/                    ← PostgreSQL connector with pool management
-        ├── go.mod               ← Module: github.com/BlackMocca/utils/psql
+        ├── go.mod               ← Module: github.com/BlackMocca/utils/connectors/psql
         ├── client.go            ← Client struct, NewConnection, NewConnectionWithTracing
         ├── client_test.go       ← Integration tests via testcontainers-go
         ├── driver.go            ← Driver type definition (Postgres enum)
@@ -99,7 +99,7 @@ Four exported types for database and JSON serialization, all with automatic **As
 
 ### 3. `psql` — PostgreSQL Connector
 
-**Import path**: `github.com/BlackMocca/utils/psql`  
+**Import path**: `github.com/BlackMocca/utils/connectors/psql`  
 **Dependencies**: pgx/v5, sqlx, lib/pq (fallback), opentracing-go, sqlhooks/v2, spf13/cast  
 **Test dependencies**: testcontainers-go (Docker integration tests)
 
