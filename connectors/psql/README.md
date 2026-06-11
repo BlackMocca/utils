@@ -2,6 +2,8 @@
 
 A lightweight, production-ready PostgreSQL connection wrapper built on top of [`pgx/v5`](https://github.com/jackc/pgx) and [`sqlx`](https://github.com/jmoiron/sqlx). Provides a unified `Client` struct with pool management, connection lifecycle handling, and optional OpenTracing support.
 
+> **Part of the [utils](../../README.md) multi-module monorepo.** See [AGENTS.md](../../AGENTS.md) for cross-module relationship context.
+
 ---
 
 ## Installation
@@ -243,6 +245,41 @@ All public functions return `(result, error)` pairs. Common errors include:
 | SSL negotiation failure | TLS handshake error |
 
 Always check the returned `err` before using the client.
+
+---
+
+## Related Modules
+
+### With [models](../../models/README.md)
+The psql client works seamlessly with `models` types for typed database columns:
+
+```go
+import "github.com/BlackMocca/utils/models"
+
+type User struct {
+    ID        uint               
+    CreatedAt models.Timestamp   // Auto-converts UTC → Bangkok on scan
+    Role      models.EnumScan[RoleType]
+}
+
+var user User
+client.GetClient().GetContext(ctx, &user, "SELECT * FROM users WHERE id = ?", 1)
+// user.CreatedAt is already in Asia/Bangkok timezone
+```
+
+### With [fn](../../fn/README.md)
+Use `ConvertStruct` to map between database models (containing `models.*` types) and API DTOs:
+
+```go
+import "github.com/BlackMocca/utils/fn"
+
+type UserAPI struct {
+    ID       int    `json:"id"`
+    Username string `json:"username"`
+}
+
+dst, err := fn.ConvertStruct[User, UserAPI](user)
+```
 
 ---
 

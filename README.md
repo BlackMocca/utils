@@ -2,22 +2,35 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/BlackMocca/utils.svg)](https://pkg.go.dev/github.com/BlackMocca/utils)
 
-A collection of lightweight, production-ready Go utility packages used across the BlackMocca backend ecosystem. This is a multi-module monorepo with three independent modules:
+Lightweight, production-ready Go utility packages used across the BlackMocca backend ecosystem. This is a **multi-module monorepo** with three independent modules that share no internal dependencies — each can be imported standalone or together as needed.
 
-| Module | Import Path | Description |
-|--------|-------------|-------------|
-| **[fn](./fn)** | `github.com/BlackMocca/utils/fn` | Generic struct-to-struct conversion via JSON round-trip |
-| **[models](./models)** | `github.com/BlackMocca/utils/models` | Custom DB & JSON types: Date, Timestamp, EnumScan, JsonScan |
-| **[psql](./connectors/psql)** | `github.com/BlackMocca/utils/psql` | PostgreSQL client with pool management & optional tracing |
+```
+utils/
+├── README.md                 ← You are here: overview & navigation
+├── AGENTS.md                 ← AI agent context & conventions
+├── fn/                       ← Generic struct-to-struct conversion
+├── models/                   ← Custom DB & JSON serialization types
+└── connectors/psql/          ← PostgreSQL client with pool management
+```
 
-All modules require **Go 1.26+**.
+---
+
+## Modules
+
+| Module | Import Path | Purpose | Key Types / Functions |
+|--------|-------------|---------|----------------------|
+| **[fn](./fn)** | `github.com/BlackMocca/utils/fn` | Struct-to-struct conversion via JSON round-trip | `ConvertStruct[T, U]`, `CopyJSON` |
+| **[models](./models)** | `github.com/BlackMocca/utils/models` | Database & JSON types: Date, Timestamp, EnumScan, JsonScan | `Date`, `Timestamp`, `EnumScan[T]`, `JsonScan[T]` |
+| **[psql](./connectors/psql)** | `github.com/BlackMocca/utils/psql` | PostgreSQL client wrapper over pgx/v5 + sqlx with pool management & optional tracing | `Client`, `NewConnection`, `NewConnectionWithTracing` |
+
+All modules require **Go 1.26+**. They share no dependencies between each other — `fn` and `models` have zero runtime deps beyond the standard library; `psql` adds database drivers, sqlx, tracing, and test tooling.
 
 ---
 
 ## Quick Install
 
 ```bash
-# Generic conversion utilities
+# Generic conversion utilities (no runtime deps)
 go get github.com/BlackMocca/utils/fn@latest
 
 # Custom date/time, enum, and JSON types for DB/JSON serialization
@@ -29,106 +42,68 @@ go get github.com/BlackMocca/utils/psql@latest
 
 ---
 
-## 1. fn — Struct Conversion Utilities
+## Cross-Module Relationships
 
-Lightweight functions to copy data between structs via `encoding/json` round-trip. Field names don't need to match — only JSON tags matter. Supports nested structs, slices, maps, pointers (including nil), and respects `json:"-"`.
+While each module is independently importable, they are commonly used together in backend services:
 
-```go
-import "github.com/BlackMocca/utils/fn"
+### models + psql (most common pairing)
 
-type Source struct {
-    ID    int    `json:"id"`
-    Name  string `json:"name"`
-}
-
-type Dest struct {
-    Identifier int    `json:"id"`
-    FullName   string `json:"name"`
-}
-
-// Generic: caller specifies types at compile time
-dst, err := fn.ConvertStruct[Source, Dest](src)
-if err != nil { /* handle */ }
-
-// Pointer-based (classic pattern)
-var dst Dest
-err = fn.CopyJSON(src, &dst)
-```
-
-[→ Full documentation](./fn/README.md)
-
----
-
-## 2. models — Date, Timestamp, Enum & JSON Types
-
-Custom types for database and JSON serialization with automatic **Asia/Bangkok** (UTC+7) timezone handling. Designed for use with GORM / raw `database/sql`.
+`models` types implement `database/sql.Scanner` and `driver.Valuer`, making them directly usable as struct fields with the `psql` client:
 
 ```go
 import "github.com/BlackMocca/utils/models"
 
-// Date (YYYY-MM-DD only)
-d := models.NewDateFromString("2024-06-15")
-
-// Timestamp — auto-converts UTC → Bangkok on unmarshal/scan
-ts := models.NewTimestampFromNow()
-
-// Nullable enum for DB columns
-type Status string // "active" | "inactive"
-e := models.NewEnumScan[Status]("active")
-
-// Generic JSON field (maps, arrays, structs)
-js := models.NewJsonScan(map[string]any{"color": "red"})
+type User struct {
+    ID        uint               `gorm:"primary_key"`
+    CreatedAt models.Timestamp   `gorm:"column:created_at;type:timestamp"`
+    Status    models.EnumScan[string]
+}
+// Works with psql.Client.GetClient().GetContext(...) or GORM
 ```
 
-All types implement `Scanner`, `Valuer`, `Marshaler`, and `Unmarshaler` interfaces.
+[→ models documentation](./models/README.md) · [→ psql documentation](./connectors/psql/README.md)
 
-[→ Full documentation](./models/README.md)
+### fn + models (DTO transformation)
+
+`fn.ConvertStruct` is useful for mapping between `models` types and API DTOs when field names differ:
+
+```go
+import "github.com/BlackMocca/utils/fn"
+import "github.com/BlackMocca/utils/models"
+
+// Map internal timestamp to API-friendly string representation
+apiResponse, err := fn.ConvertStruct[models.Timestamp, map[string]any](ts)
+```
+
+[→ fn documentation](./fn/README.md)
+
+### All three (full service stack)
+
+A typical BlackMocca backend service imports all three: `fn` for DTOs, `models` for typed database fields, and `psql` for the connection layer.
 
 ---
 
-## 3. psql — PostgreSQL Connector
+## Development Conventions
 
-A production-ready PostgreSQL client built on `pgx/v5` + `sqlx`. Provides pool management, configurable via environment variables, with optional OpenTracing support.
-
-```go
-import "github.com/BlackMocca/utils/psql"
-
-ctx := context.Background()
-client, err := psql.NewConnection(ctx, dsn)
-if err != nil { panic(err) }
-defer client.Close()
-
-// Use the underlying *sqlx.DB directly
-var count int
-err = client.GetClient().GetContext(ctx, &count, "SELECT COUNT(*) FROM users")
-```
-
-**Pool settings** are configured via `POSTGRES_*` env vars:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `POSTGRES_MAX_CONNS` | `4` | Max open connections |
-| `POSTGRES_MAX_CONN_IDLE_TIME` | `30m` | Idle timeout |
-| `POSTGRES_MAX_CONN_LIFETIME` | `1h` | Connection max age |
-
-For distributed tracing, use `NewConnectionWithTracing(ctx, dsn, psql.Postgres, tracer)`.
-
-[→ Full documentation](./connectors/psql/README.md)
+- Each module is an **independent** Go module with its own `go.mod` / `go.sum`.
+- All modules target **Go 1.26+**.
+- Tests use `stretchr/testify` for assertions.
+- No global mutable state in `fn`; all functions are pure.
+- `models` types implement standard interfaces (`Scanner`, `Valuer`, `Marshaler`, `Unmarshaler`).
+- The `psql` module uses `sqlhooks/v2` for query lifecycle hooks and `opentracing-go` for distributed tracing.
 
 ---
 
 ## Running Tests
 
-Each module has its own test suite. Run from the module directory:
-
 ```bash
-# fn module
+# fn module (no Docker needed)
 cd fn && go test ./... -v
 
-# models module
+# models module (no Docker needed)
 cd models && go test ./... -v
 
-# psql module (requires Docker for integration tests)
+# psql module (requires Docker for integration tests via testcontainers-go)
 cd connectors/psql && go test -v -count=1 ./...
 ```
 

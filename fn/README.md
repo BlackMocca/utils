@@ -1,9 +1,10 @@
 # `fn` — Generic Struct & JSON Utility Package
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/BlackMocca/utils/fn.svg)](https://pkg.go.dev/github.com/BlackMocca/utils/fn)
-[![Test](https://github.com/BlackMocca/utils/workflows/test/badge.svg)](https://github.com/BlackMocca/utils/actions)
 
 Lightweight Go utilities for converting between structs via JSON serialization. Built with **Go 1.26+ generics**, no external runtime dependencies beyond the standard library.
+
+> **Part of the [utils](../README.md) multi-module monorepo.** See [AGENTS.md](../AGENTS.md) for AI agent context and cross-module relationship guidance.
 
 ---
 
@@ -149,6 +150,13 @@ The test suite covers:
 - Empty structs and zero-value inputs
 - `json:"-"` omitted fields
 - Round-trip consistency between both functions
+
+---
+
+## Related Packages
+
+- **[models](../models/README.md)** — Use `ConvertStruct` to map `Timestamp`, `Date`, or other models types to API DTOs when field names differ across layers.
+- **[psql](../connectors/psql/README.md)** — Convert between domain model structs (containing `models.Date`, `models.EnumScan`) and wire-format DTOs before serialization.
 
 ---
 

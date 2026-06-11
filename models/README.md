@@ -10,9 +10,9 @@ go get github.com/BlackMocca/utils/models
 **Go Version**: 1.26+  
 **Dependencies**: `4d63.com/tz` (timezone support)
 
-## Overview
+> **Part of the [utils](../README.md) multi-module monorepo.** See [AGENTS.md](../AGENTS.md) for cross-module relationship context.
 
-This package provides custom types for database and JSON serialization with automatic **Asia/Bangkok timezone handling**. All date/time types store data in ICT (UTC+7).
+Custom types for database and JSON serialization with automatic **Asia/Bangkok timezone handling**. Designed for use with raw `database/sql`, GORM, or the [psql connector](../connectors/psql/README.md).
 
 ---
 
@@ -368,3 +368,40 @@ go test ./models/... -v
 # Run specific type tests
 go test ./models/... -run TestTimestamp -v
 ```
+
+---
+
+## Integration with Other Modules
+
+### With [psql](../connectors/psql/README.md)
+All four types (`Date`, `Timestamp`, `EnumScan[T]`, `JsonScan[T]`) implement `database/sql.Scanner` and `driver.Valuer`, making them directly usable as struct fields with the psql client:
+
+```go
+type Order struct {
+    ID         uint               
+    PlacedAt   models.Timestamp   // UTC auto-converts to Bangkok on scan
+    Category   models.EnumScan[string]
+    Details    models.JsonScan[map[string]any]
+}
+
+// Works with psql.Client.GetClient().GetContext(...) or GORM
+client.GetClient().GetContext(ctx, &order, "SELECT * FROM orders WHERE id = ?", 1)
+```
+
+### With [fn](../fn/README.md)
+Use `ConvertStruct` to map models types between layers (e.g., database model ↔ API response):
+
+```go
+type APIResponse struct {
+    ID       int      `json:"id"`
+    DateStr  string   `json:"date"`
+}
+
+// Map database model to flat API response
+dst, err := fn.ConvertStruct[Order, APIResponse](order)
+```
+
+### Related Modules
+- **[fn](../fn/README.md)** — struct-to-struct conversion for DTO mapping
+- **[psql](../connectors/psql/README.md)** — PostgreSQL client that works seamlessly with these types
+- [utils overview](../README.md) — full module list and installation```
