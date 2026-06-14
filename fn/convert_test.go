@@ -1,8 +1,9 @@
-package fn
+package fn_test
 
 import (
 	"testing"
 
+	"github.com/BlackMocca/utils/fn"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,14 +16,14 @@ type SourceUser struct {
 }
 
 type DestUser struct {
-	ID    int    `json:"id"`
+	ID       int    `json:"id"`
 	FullName string `json:"name"`
-	Contact   string `json:"email"`
+	Contact  string `json:"email"`
 }
 
 type InnerMeta struct {
-	Tags []string `json:"tags"`
-	Count int     `json:"count"`
+	Tags  []string `json:"tags"`
+	Count int      `json:"count"`
 }
 
 type NestedSource struct {
@@ -56,7 +57,7 @@ type MapSource struct {
 func TestConvertStruct_SameType(t *testing.T) {
 	src := SourceUser{ID: 1, Name: "Alice", Email: "alice@example.com"}
 
-	dst, err := ConvertStruct[SourceUser, SourceUser](src)
+	dst, err := fn.ConvertStruct[SourceUser, SourceUser](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src, dst)
@@ -65,7 +66,7 @@ func TestConvertStruct_SameType(t *testing.T) {
 func TestConvertStruct_DifferentFieldNames(t *testing.T) {
 	src := SourceUser{ID: 42, Name: "Bob", Email: "bob@example.com"}
 
-	dst, err := ConvertStruct[SourceUser, DestUser](src)
+	dst, err := fn.ConvertStruct[SourceUser, DestUser](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 42, dst.ID)
@@ -76,7 +77,7 @@ func TestConvertStruct_DifferentFieldNames(t *testing.T) {
 func TestConvertStruct_EmptyStruct(t *testing.T) {
 	src := EmptyStruct{}
 
-	dst, err := ConvertStruct[EmptyStruct, EmptyStruct](src)
+	dst, err := fn.ConvertStruct[EmptyStruct, EmptyStruct](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src, dst)
@@ -91,7 +92,7 @@ func TestConvertStruct_NestedStruct(t *testing.T) {
 		},
 	}
 
-	dst, err := ConvertStruct[NestedSource, NestedDest](src)
+	dst, err := fn.ConvertStruct[NestedSource, NestedDest](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src.ID, dst.ID)
@@ -106,7 +107,7 @@ func TestConvertStruct_Pointers(t *testing.T) {
 
 	src := WithPtrs{A: &a, B: &b, C: &c}
 
-	dst, err := ConvertStruct[WithPtrs, WithPtrs](src)
+	dst, err := fn.ConvertStruct[WithPtrs, WithPtrs](src)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, dst.A)
@@ -120,7 +121,7 @@ func TestConvertStruct_Pointers(t *testing.T) {
 func TestConvertStruct_PointerWithNil(t *testing.T) {
 	hello := "hello"
 	src := WithPtrs{A: nil, B: &hello, C: nil}
-	dst, err := ConvertStruct[WithPtrs, WithPtrs](src)
+	dst, err := fn.ConvertStruct[WithPtrs, WithPtrs](src)
 
 	assert.NoError(t, err)
 	assert.Nil(t, dst.A)
@@ -131,7 +132,7 @@ func TestConvertStruct_PointerWithNil(t *testing.T) {
 
 func TestConvertSliceValue(t *testing.T) {
 	src := SliceSource{Items: []int{1, 2, 3}}
-	dst, err := ConvertStruct[SliceSource, SliceSource](src)
+	dst, err := fn.ConvertStruct[SliceSource, SliceSource](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src.Items, dst.Items)
@@ -139,7 +140,7 @@ func TestConvertSliceValue(t *testing.T) {
 
 func TestConvertMapValue(t *testing.T) {
 	src := MapSource{Data: map[string]int{"a": 1, "b": 2}}
-	dst, err := ConvertStruct[MapSource, MapSource](src)
+	dst, err := fn.ConvertStruct[MapSource, MapSource](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src.Data, dst.Data)
@@ -147,7 +148,7 @@ func TestConvertMapValue(t *testing.T) {
 
 func TestConvertStruct_ZeroValues(t *testing.T) {
 	src := SourceUser{} // all zero values
-	dst, err := ConvertStruct[SourceUser, SourceUser](src)
+	dst, err := fn.ConvertStruct[SourceUser, SourceUser](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, dst.ID)
@@ -161,7 +162,7 @@ func TestCopyJSON_SameStruct(t *testing.T) {
 	src := SourceUser{ID: 5, Name: "Charlie", Email: "charlie@test.com"}
 	var dst SourceUser
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src, dst)
@@ -171,7 +172,7 @@ func TestCopyJSON_DifferentStruct(t *testing.T) {
 	src := SourceUser{ID: 99, Name: "Diana", Email: "diana@ex.com"}
 	var dst DestUser
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 99, dst.ID)
@@ -184,7 +185,7 @@ func TestCopyJSON_NilPointer(t *testing.T) {
 	// the function simply returns without writing anything.
 	src := SourceUser{ID: 1, Name: "Test", Email: "test@x.com"}
 
-	err := CopyJSON(src, nil)
+	err := fn.CopyJSON(src, nil)
 
 	assert.NoError(t, err) // Go's json.Unmarshal silently ignores a nil interface
 }
@@ -193,7 +194,7 @@ func TestCopyJSON_EmptyStruct(t *testing.T) {
 	var dst EmptyStruct
 	src := EmptyStruct{}
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src, dst)
@@ -201,12 +202,12 @@ func TestCopyJSON_EmptyStruct(t *testing.T) {
 
 func TestCopyJSON_NestedStruct(t *testing.T) {
 	src := NestedSource{
-		ID: 3,
+		ID:       3,
 		Metadata: InnerMeta{Tags: []string{"x"}, Count: 99},
 	}
 	var dst NestedDest
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, src.ID, dst.ID)
@@ -219,7 +220,7 @@ func TestCopyJSON_Pointers(t *testing.T) {
 	src := WithPtrs{A: &a, B: nil}
 	var dst WithPtrs
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, dst.A)
@@ -231,7 +232,7 @@ func TestCopyJSON_MapValue(t *testing.T) {
 	src := MapSource{Data: map[string]int{"k": 10}}
 	var dst MapSource
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 10, dst.Data["k"])
@@ -241,7 +242,7 @@ func TestCopyJSON_SliceValue(t *testing.T) {
 	src := SliceSource{Items: []int{10, 20, 30}}
 	var dst SliceSource
 
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, []int{10, 20, 30}, dst.Items)
@@ -252,9 +253,9 @@ func TestCopyJSON_SliceValue(t *testing.T) {
 func TestBothFunctions_ProduceSameResult(t *testing.T) {
 	src := SourceUser{ID: 7, Name: "Eve", Email: "eve@y.com"}
 
-	dst1, err1 := ConvertStruct[SourceUser, DestUser](src)
+	dst1, err1 := fn.ConvertStruct[SourceUser, DestUser](src)
 	var dst2 DestUser
-	err2 := CopyJSON(src, &dst2)
+	err2 := fn.CopyJSON(src, &dst2)
 
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
@@ -272,11 +273,11 @@ func TestConvertStruct_RoundTrip(t *testing.T) {
 		},
 	}
 
-	dst, err := ConvertStruct[NestedSource, NestedDest](original)
+	dst, err := fn.ConvertStruct[NestedSource, NestedDest](original)
 	assert.NoError(t, err)
 
 	var roundTrip NestedSource
-	err = CopyJSON(dst, &roundTrip)
+	err = fn.CopyJSON(dst, &roundTrip)
 	assert.NoError(t, err)
 
 	assert.Equal(t, original.ID, roundTrip.ID)
@@ -287,7 +288,7 @@ func TestConvertStruct_RoundTrip(t *testing.T) {
 func TestConvertStruct_WithOmittedFields(t *testing.T) {
 	// When a field is omitted in the destination, it should remain its zero value.
 	src := SourceUser{ID: 10, Name: "Frank", Email: "frank@z.com"}
-	dst, err := ConvertStruct[SourceUser, DestUser](src)
+	dst, err := fn.ConvertStruct[SourceUser, DestUser](src)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 10, dst.ID)
@@ -305,7 +306,7 @@ func TestConvertStruct_WithInvalidJSONTag(t *testing.T) {
 	}
 
 	src := BadSrc{Value: "ignored"}
-	dst, err := ConvertStruct[BadSrc, BadSrc](src)
+	dst, err := fn.ConvertStruct[BadSrc, BadSrc](src)
 
 	assert.NoError(t, err)
 	assert.Nil(t, dst.Value) // json:"-" is dropped → zero value in dst
@@ -317,7 +318,7 @@ func TestCopyJSON_InvalidSourceNonPtr(t *testing.T) {
 	var dst string // not a pointer — but CopyJSON accepts any type and unmarshals into &dst
 
 	// dst is addressable, so json.Unmarshal works fine. This test verifies no panic.
-	err := CopyJSON(src, &dst)
+	err := fn.CopyJSON(src, &dst)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "hello", dst)

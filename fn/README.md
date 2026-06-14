@@ -24,6 +24,8 @@ This package provides two functions that marshal a value to JSON and unmarshal i
 |---|---|---|---|
 | **`ConvertStruct`** | `func ConvertStruct[Src any, Dst any](src Src) (Dst, error)` | `(Dst, error)` | Generic API; destination type is inferred by the caller. No pointer needed on output. |
 | **`CopyJSON`** | `func CopyJSON(src any, dst any) error` | `error` | Classic Go pattern — accepts a source value and a **pointer** to the destination. |
+| **`LookupEnv`** | `func LookupEnv(key string, defaultValue string) string` | `string` | Lookup Value in Environment Variable if not exists will be using default value instead |
+
 
 Both functions rely on `encoding/json` under the hood, so all standard JSON rules apply (tags, omitempty, slices, maps, nested structs, pointers, etc.).
 
